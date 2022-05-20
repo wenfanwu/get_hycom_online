@@ -27,6 +27,7 @@ for iTime = 1:nTimes
     D = get_hycom_online(aimpath, region, timeTick, varList);
 end
 ```
+![avatar](/figures/bohai_sea.png)
 
 ## Example-3: Download data from a specified HYCOM product
 ```Matlab
