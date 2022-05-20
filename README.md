@@ -13,8 +13,8 @@ D = get_hycom_online(aimpath, region, timeTick, varList);
 ```
 ![avatar](/figures/nino34.png)
 
+## Example-2: Download HYCOM data in bulk
 ```Matlab
-%% Example-2: Download HYCOM data in bulk
 clc;clearvars
 aimpath = 'E:/data/';
 region = [117.5 122.5 37 41]; % the Bohai Sea
@@ -28,8 +28,8 @@ for iTime = 1:nTimes
 end
 ```
 
+## Example-3: Download data from a specified HYCOM product
 ```Matlab
-%% Example-3: Download data from a specified HYCOM product
 clc;clearvars
 aimpath = 'E:/data/';
 region = [261 280 17.5 32.5]; % the Gulf of Mexico
