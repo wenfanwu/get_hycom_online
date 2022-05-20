@@ -78,7 +78,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 %
 %% Tips
 % The network of HYCOM website seems to be unstable, so it may take
-% a long time to download data sometime, or encountered netCDF errors, just
+% a long time to download data sometimes, or encountered netCDF errors, just
 % re-run the function in this case.
 %
 % A possible method to accelerate this function is to save the dimension
