@@ -1,5 +1,5 @@
 # get_hycom_online
-A MATLAB function to download hycom data easily
+A MATLAB function to download hycom data easily (1992-10-02 to present)
 
 
 ## Example-1: Download HYCOM data at a particular moment
