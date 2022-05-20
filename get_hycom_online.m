@@ -16,7 +16,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % D = get_hycom_online(aimpath, region, timeTick, varList, URL) specifies
 % the HYCOM product.
 %
-%% Example-1: Download HYCOM data at a particular moment
+%% Example-1: Download HYCOM data of a particular moment
 % clc;clearvars
 % aimpath = 'E:/data/';
 % region = [190 240 -5 5]; % Nino3.4
