@@ -63,7 +63,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 %% Notes
 % There are three things to note before you use this function:
 %
-% (1) this function aims to download the HYCOM data at a particular moment,
+% (1) this function aims to download the HYCOM data of a particular moment,
 % and it will search the data at the nearest moment relative to your given time. 
 %
 % (2) before downloading, this function will check if you have ever made
