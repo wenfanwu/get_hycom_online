@@ -9,7 +9,9 @@ region = [190 240 -5 5]; % Nino3.4
 timeTick = datetime(2010,1,1);
 varList = {'ssh','temp','salt','u','v'};    
 D = get_hycom_online(aimpath, region, timeTick, varList);
+```
 
+```Matlab
 %% Example-2: Download HYCOM data in bulk
 clc;clearvars
 aimpath = 'E:/data/';
@@ -22,7 +24,9 @@ for iTime = 1:nTimes
     timeTick = timeList(iTime);
     D = get_hycom_online(aimpath, region, timeTick, varList);
 end
+```
 
+```Matlab
 %% Example-3: Download data from a specified HYCOM product
  clc;clearvars
  aimpath = 'E:/data/';
