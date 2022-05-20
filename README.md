@@ -36,5 +36,5 @@ URL = 'http://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0?';
 D = get_hycom_online(aimpath, region, timeTick, varList, URL);
 ```
 
-## Sample Figures
+## Sample Figure
 ![avatar](/figures/nino34.png)
