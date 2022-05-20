@@ -11,8 +11,6 @@ timeTick = datetime(2010,1,1);
 varList = {'ssh','temp','salt','u','v'};    
 D = get_hycom_online(aimpath, region, timeTick, varList);
 ```
-![avatar](/figures/nino34.png)
-
 ## Example-2: Download HYCOM data in bulk
 ```Matlab
 clc;clearvars
@@ -27,8 +25,6 @@ for iTime = 1:nTimes
     D = get_hycom_online(aimpath, region, timeTick, varList);
 end
 ```
-![avatar](/figures/bohai_sea.png)
-
 ## Example-3: Download data from a specified HYCOM product
 ```Matlab
 clc;clearvars
@@ -39,3 +35,6 @@ varList = {'ssh','temp','salt','u','v'};
 URL = 'http://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0?';
 D = get_hycom_online(aimpath, region, timeTick, varList, URL);
 ```
+
+## Sample Figures
+![avatar](/figures/nino34.png)
