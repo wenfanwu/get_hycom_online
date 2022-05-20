@@ -58,7 +58,9 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % varList --- variable list. Default: varList = {'ssh','temp','salt','u','v'};
 %
 %% Output Arguments
-% D --- a datastruct containing all the variables you need.
+% D --- a datastruct containing all the variables you need. Note that the
+% dev_time field means the deviation (in hours) between the actual time of
+% the downloaded data and your specified time.
 %
 %% Notes
 % There are three things to note before you use this function:
@@ -87,8 +89,8 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % advance, but it may reduce the conciseness of this function.
 %
 % What if the HYCOM data of the particular time is missing? You can increase
-% the 'dev_time' parameter at Line 155 to replace missing data with data on
-% adjacent days. e.g. dev_time = days(3);
+% the 'tole_time' parameter at Line 175 to replace missing data with data on
+% adjacent days. It means tolerance time bias. e.g. tole_time = days(3); 
 %
 %% Author Info
 % Created by Wenfan Wu, Ocean Univ. of China in 2021.
@@ -134,10 +136,11 @@ if timeTick<time_pool(1) ||  timeTick>time_pool(end)
 end
 
 ind_rtime = wisefind(time_pool, timeTick);
-timeTick = time_pool(ind_rtime);
+time_hycom = time_pool(ind_rtime);
+
 reg_names = abs(round(region));
 geo_tag = ['W',num2str(reg_names(1)),'E',num2str(reg_names(2)),'S',num2str(reg_names(3)),'N',num2str(reg_names(4))];
-aimfile = fullfile(aimpath, [geo_tag, '_',datestr(timeTick,'yyyymmddTHHMMZ'),'.mat']);
+aimfile = fullfile(aimpath, [geo_tag, '_',datestr(time_hycom,'yyyymmddTHHMMZ'),'.mat']);
 
 %% Download
 if exist(aimfile, 'file')~=0
@@ -145,7 +148,7 @@ if exist(aimfile, 'file')~=0
     load(aimfile) %#ok<LOAD>
 else
     if nargin< 5
-        URL = get_URL(timeTick);
+        URL = get_URL(time_hycom);
     end
     %     ncdisp(URL)  % debug
     nc_dims = {'lon','lat','depth','time'};
@@ -154,9 +157,8 @@ else
     depAll = ncread(URL, nc_dims{3});
     timeAll = datetime(datevec(ncread(URL, nc_dims{4})/24+datenum(2000,1,1)));
 
-    dev_time = days(1); % you can increase this value to replace missing data with data on adjacent days
-    if timeTick<min(timeAll)-dev_time || timeTick>max(timeAll)+dev_time
-        error('HYCOM data is missing on this day, please check!')
+    if time_hycom<min(timeAll)-days(1) || time_hycom>max(timeAll)+days(1)
+        error('The given time is outside the time range of the specified HYCOM product!')
     end
     if  min(lonAll)<0
         if max(region(1:2))>180
@@ -166,17 +168,22 @@ else
     end
     indLons = wisefind(lonAll, region(1:2));
     indLats = wisefind(latAll, region(3:4));
-    indTime = wisefind(timeAll, timeTick);
+    indTime = wisefind(timeAll, time_hycom);
 
     D.lon = lonAll(min(indLons):max(indLons));
     D.lat = latAll(min(indLats):max(indLats));
     D.depth = depAll;
     D.time = timeAll(indTime);
 
-    if days(abs(D.time-timeTick))> days(1)
-        error('The selected HYCOM dataset does not include the given time!')
+    tole_time = days(1); % you can increase this value to replace missing data with data on adjacent days
+    dev_time = D.time-timeTick;
+    if abs(dev_time) > tole_time
+        warning on
+        warning(['HYCOM data is missing on ',datestr(time_hycom, 'yyyy-mm-dd') ,', and this function has stopped'])
+        return
     end
-
+    D.dev_time = dev_time;
+    
     nVars = numel(stdList);
     nLayers = numel(D.depth);
     for iVar = 1:nVars
@@ -194,7 +201,7 @@ else
 end
 
 cst = toc;
-disp(['It takes ', num2str(cst,'%.2f'),' secs to download ', datestr(timeTick,'yyyymmddTHHMMZ'), '.mat'])
+disp(['It takes ', num2str(cst,'%.2f'),' secs to download ', datestr(time_hycom,'yyyymmddTHHMMZ'), '.mat'])
 end
 
 function URL = get_URL(timeTick)
