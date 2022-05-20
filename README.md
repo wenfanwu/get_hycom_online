@@ -1,8 +1,9 @@
 # get_hycom_online
 A MATLAB function to download hycom data easily
 
+
+## Example-1: Download HYCOM data at a particular moment
 ```Matlab
-%% Example-1: Download HYCOM data at a particular moment
 clc;clearvars
 aimpath = 'E:/data/';
 region = [190 240 -5 5]; % Nino3.4
