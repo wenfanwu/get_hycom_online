@@ -50,7 +50,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % aimpath --- the directory where the HYCOM data is stored. It doesn't
 % matter if this directory name ends with a backslash.
 %
-% region --- the region of interest. e.g. region = [lon_south, lon_north, lat_south, lat_north];
+% region --- the region of interest. e.g. region = [lon_west, lon_east, lat_south, lat_north];
 % the longitude should be in [0, 360], while latitude is in [-80 80].
 %
 % timeTick --- the specified time with datetime format. e.g. timeTick = datetime(2010,1,1);
