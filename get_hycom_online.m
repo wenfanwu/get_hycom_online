@@ -197,7 +197,7 @@ else
         D.(varName) = varData;
         clear varData
     end
-    save(aimfile, 'D')
+    save(aimfile, '-struct', 'D')
 end
 
 cst = toc;
