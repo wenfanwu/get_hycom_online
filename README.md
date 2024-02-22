@@ -41,4 +41,5 @@ D = get_hycom_online(aimpath, region, timeTick, varList, URL);
 
 ## Known Issues
 When a given longitude range includes the longitude boundaries of the original HYCOM product, you need to download it twice separately and splice it together to get the desired data. 
+
 For example, the longitude range of hycom data is [-180 180], but given the longitude range is [150 200],
