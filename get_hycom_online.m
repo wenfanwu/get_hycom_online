@@ -21,7 +21,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % aimpath = 'E:/data/';
 % region = [190 240 -5 5]; % Nino3.4
 % timeTick = datetime(2010,1,1);
-% varList = {'ssh','temp','salt','u','v'};
+% varList = {'ssh','temp','salt','uvel','vvel'};
 % D = get_hycom_online(aimpath, region, timeTick, varList);
 %
 %% Example-2: Download HYCOM data in bulk
@@ -29,7 +29,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % aimpath = 'E:/data/';
 % region = [117.5 122.5 37 41]; % the Bohai Sea
 % timeList = datetime(2020,1,1):hours(3):datetime(2020,2,1);
-% varList = {'ssh','temp','salt','u','v'};
+% varList = {'ssh','temp','salt','uvel','vvel'};
 %
 % nTimes = numel(timeList);
 % for iTime = 1:nTimes
@@ -50,7 +50,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % aimpath --- the directory where the HYCOM data is stored. It doesn't
 % matter if this directory name ends with a backslash.
 %
-% region --- the region of interest. e.g. region = [lon_west, lon_east, lat_west, lat_east];
+% region --- the region of interest. e.g. region = [lon_south, lon_north, lat_south, lat_north];
 % the longitude should be in [0, 360], while latitude is in [-80 80].
 %
 % timeTick --- the specified time with datetime format. e.g. timeTick = datetime(2010,1,1);
@@ -67,7 +67,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 %
 % (1) this function aims to download the HYCOM data of a particular moment,
 % and it will search the HYCOM data at the nearest moment relative to your
-% given time. 
+% given time.
 %
 % (2) before downloading, this function will check if you have ever made
 % the same request, if so, it will load the available one directly.
@@ -77,7 +77,8 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % whose longitude vectors are from 0 to 360, whereas those of the other 5
 % products are from -180 to 180 (see the bottom of this function). This
 % inconsistency slightly hinders our data reading, especially when your
-% given spatial region intersects the prime meridian.
+% given spatial region intersects the prime meridian. In this case, you
+% need to slice your domain and download twice.
 %
 %% Tips
 % The network of HYCOM website seems to be unstable, so it may take
@@ -89,13 +90,13 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % advance, but it may reduce the conciseness of this function.
 %
 % What if the HYCOM data of the particular time is missing? You can increase
-% the 'tole_time' parameter at Line 178 to replace missing data with data on
-% adjacent days. It means tolerance time bias. e.g. tole_time = days(3); 
+% the 'tole_time' parameter at Line 175 to replace missing data with data on
+% adjacent days. It means tolerance time bias. e.g. tole_time = days(3);
 %
 %% Author Info
-% Created by Wenfan Wu, Ocean Univ. of China in 2021.
-% Last Updated on 2022-05-20.
-% Email: wenfanwu@stu.ouc.edu.cn
+% Created by Wenfan Wu, Virginia Institute of Marine Science in 2021.
+% Last Updated on 25 Sep 2024.
+% Email: wwu@vims.edu
 %
 % See also: ncread
 
@@ -104,10 +105,6 @@ tic
 if exist(aimpath,'dir')~=7
     disp('the aimpath does not exist and has been created automatically')
     mkdir(aimpath);
-end
-
-if min(region(1:2))<0 || max(region(1:2))>360 || min(region(3:4))<-80 || max(region(3:4))>80
-    error('The longitudes should be in [0, 360], while latitudes is in [-80 80].')
 end
 
 varBase = {'ssh','temp','salt','u','v'};
@@ -128,44 +125,57 @@ varList = varBase(ind_vars);
 stdList = stdBase(ind_vars);
 
 time_part1 = datetime(1992,10,2):datetime(2014,7,1,12,0,0);
-time_part2 = datetime(2014,7,1, 12, 0, 0):hours(3):dateshift(datetime(datevec(now-1)), 'start', 'day');
+time_part2 = datetime(2014,7,1, 12, 0, 0):hours(3):dateshift(datetime(datevec(now-1)), 'start', 'day'); %#ok<*TNOW1>
 time_pool = [time_part1(:); time_part2(:)];
 
 if timeTick<time_pool(1) ||  timeTick>time_pool(end)
-    error(['No available HYCOM data before 1992-10-02 or after ',datestr(now-1, 'yyyy-mm-dd'),'!'])
+    error(['No available HYCOM data before 1992-10-02 or after ',datestr(now-1, 'yyyy-mm-dd'),'!']) %#ok<*DATST>
 end
 
 ind_rtime = wisefind(time_pool, timeTick);
 time_hycom = time_pool(ind_rtime);
 
-reg_names = abs(round(region));
-geo_tag = ['W',num2str(reg_names(1)),'E',num2str(reg_names(2)),'S',num2str(reg_names(3)),'N',num2str(reg_names(4))];
+reg_vars =round(region);
+geo_tag = ['W',num2str(reg_vars(1)),'E',num2str(reg_vars(2)),'S',num2str(reg_vars(3)),'N',num2str(reg_vars(4))];
+geo_tag = strrep(geo_tag, '-', 'n'); % to avoid unnecessary issues on Linux system; n means negative.
 aimfile = fullfile(aimpath, [geo_tag, '_',datestr(time_hycom,'yyyymmddTHHMMZ'),'.mat']);
 
 %% Download
 if exist(aimfile, 'file')~=0
     disp('It has been downloaded before')
-    load(aimfile) %#ok<LOAD>
+    D = load(aimfile);
 else
-    if nargin< 5
+    if nargin < 5
         URL = get_URL(time_hycom);
     end
-    %     ncdisp(URL)  % debug
+    % ncdisp(URL)  % debug
     nc_dims = {'lon','lat','depth','time'};
     lonAll = ncread(URL, nc_dims{1});
     latAll = ncread(URL, nc_dims{2});
     depAll = ncread(URL, nc_dims{3});
-    timeAll = datetime(datevec(ncread(URL, nc_dims{4})/24+datenum(2000,1,1)));
-
+    timeAll = datetime(datevec(ncread(URL, nc_dims{4})/24+datenum(2000,1,1))); %#ok<*DATNM>
+    
+    % check the consistency of coordinate systems
+    lonReg = region(1:2); lon_flag = 0;
+    if max(lonAll)>180 && min(lonReg)<0
+        lon_flag = -1;
+        lonReg(lonReg<0) = lonReg(lonReg<0)+360;
+    end
+    if min(lonAll)<0 && max(lonReg)>180
+        lon_flag = 1;
+        lonReg(lonReg>180) = lonReg(lonReg>180)-360;
+    end
+    if sum(lonReg==region(1:2))==1
+        error('your provided longitutes hits the longitudinal bound of hycom product, please check!')
+    end
+    region(1:2) = lonReg;
+    
+    % check the availability of time span when URL was manually specified
     if time_hycom<min(timeAll)-days(1) || time_hycom>max(timeAll)+days(1)
-        error('The given time is outside the time range of the specified HYCOM product!')
+        error('the given time is outside the time range of the specified HYCOM product!')
     end
-    if  min(lonAll)<0
-        if max(region(1:2))>180
-            ind_west = region>180;
-            region(ind_west) = region(ind_west)-360;
-        end
-    end
+    
+    % begin to subset data
     indLons = wisefind(lonAll, region(1:2));
     indLats = wisefind(latAll, region(3:4));
     indTime = wisefind(timeAll, time_hycom);
@@ -175,15 +185,23 @@ else
     D.depth = depAll;
     D.time = timeAll(indTime);
 
-    tole_time = days(1); % you can increase this value to replace missing data with data on adjacent days
+    % restore the longitude
+    switch lon_flag
+        case -1
+            D.lon(D.lon>180) = D.lon(D.lon>180)-360;
+        case 1
+            D.lon(D.lon<0) = D.lon(D.lon<0)+360;
+    end
+
+    tole_time = days(1); % increase this value to replace missing data with data on adjacent days
     dev_time = D.time-timeTick;
     if abs(dev_time) > tole_time
         warning on
-        warning(['HYCOM data is missing on ',datestr(time_hycom, 'yyyy-mm-dd') ,', and this function has stopped'])
+        warning(['HYCOM data is missing on ', datestr(time_hycom, 'yyyy-mm-dd') ,', and this function has stopped'])
         return
     end
     D.dev_time = dev_time;
-    
+
     nVars = numel(stdList);
     nLayers = numel(D.depth);
     for iVar = 1:nVars
@@ -199,8 +217,8 @@ else
     end
     save(aimfile, '-struct', 'D')
 end
-
 cst = toc;
+
 disp(['It takes ', num2str(cst,'%.2f'),' secs to download ', datestr(time_hycom,'yyyymmddTHHMMZ'), '.mat'])
 end
 
@@ -213,7 +231,7 @@ if timeTick < datetime(1992,10,2)
 
     % ------GLBv0.08 (2014-7-1 to 2020-2-19, 3-hourly, 40 levels, 0.08*0.08) --- High-priority
 elseif timeTick >= datetime(2018,1,1,12,0,0) && timeTick <= datetime(2020,2,19,9,0,0)  % checked  0-360, -80-80
-    URL = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_93.0?';
+    URL = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_93.0?';  
 elseif timeTick >= datetime(2017,10,1,12,0,0) && timeTick <= datetime(2018,3,20,9,0,0)  % checked  0-360, -80-80
     URL = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_92.9?';
 elseif timeTick >= datetime(2017,6,1,12,0,0) && timeTick <= datetime(2017,10,1,9,0,0)    % checked   -180-180, -80-80
@@ -276,10 +294,4 @@ end
 % timeList = [datetime(1993,1,1) datetime(1996,1,1) datetime(2012, 3,1) datetime(2014, 1,1) ...
 %     datetime(2014, 5,1) datetime(2015, 1,1) datetime(2016, 1,1) datetime(2017, 5,1) ...
 %     datetime(2017, 9,1) datetime(2018, 2,1) datetime(2019, 3,1) datetime(2022, 5,1)];
-
-
-
-
-
-
 
