@@ -1,8 +1,7 @@
 # get_hycom_online
 A MATLAB function to download hycom data easily (1992-10-02 to present)
 
-## Updates (25 Sep, 2024)
-New features:
+## New features (25 Sep, 2024)
 1. the coordinat system of returned longitute vector will always follow your provided longitude range (would be [0, 360] or [-180, 180])
 2. the function will report an error when provided longitude range hits the longitudinal bound of selected hycom product.
 
