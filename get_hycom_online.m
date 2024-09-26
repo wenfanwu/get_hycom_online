@@ -90,7 +90,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % advance, but it may reduce the conciseness of this function.
 %
 % What if the HYCOM data of the particular time is missing? You can increase
-% the 'tole_time' parameter at Line 175 to replace missing data with data on
+% the 'tole_time' parameter at Line 196 to replace missing data with data on
 % adjacent days. It means tolerance time bias. e.g. tole_time = days(3);
 %
 %% Author Info
