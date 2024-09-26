@@ -14,7 +14,7 @@ timeTick = datetime(2010,1,1);
 varList = {'ssh','temp','salt','u','v'};    
 D = get_hycom_online(aimpath, region, timeTick, varList);
 ```
-## Example-2: Download HYCOM data in bulk
+## Example-2: Download HYCOM data in batch
 ```Matlab
 clc;clearvars
 aimpath = 'E:/data/';
