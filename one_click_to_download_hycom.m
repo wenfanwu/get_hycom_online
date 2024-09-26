@@ -1,4 +1,4 @@
-%% This program aims to automatically download hycom products.
+%% This program aims to automatically download hycom products in batch.
 %% Parse inputs
 clc;clearvars
 aimpath = 'E:\HYCOM-dataset\HYCOM_ChesBay\';
