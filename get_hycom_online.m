@@ -24,7 +24,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % varList = {'ssh','temp','salt','uvel','vvel'};
 % D = get_hycom_online(aimpath, region, timeTick, varList);
 %
-%% Example-2: Download HYCOM data in bulk
+%% Example-2: Download HYCOM data in batch
 % clc;clearvars
 % aimpath = 'E:/data/';
 % region = [117.5 122.5 37 41]; % the Bohai Sea
