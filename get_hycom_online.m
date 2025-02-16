@@ -42,7 +42,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % aimpath = 'E:/data/';
 % region = [261 280 17.5 32.5]; % the Gulf of Mexico
 % timeTick = datetime(2010,1,1);
-% varList = {'ssh','temp','salt','u','v'};
+% varList = {'ssh','temp','salt','uvel','vvel'};
 % URL = 'http://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0?';
 % D = get_hycom_online(aimpath, region, timeTick, varList, URL);
 %
@@ -51,11 +51,11 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % matter if this directory name ends with a backslash.
 %
 % region --- the region of interest. e.g. region = [lon_west, lon_east, lat_south, lat_north];
-% the longitude can be in [0, 360] or [-180,180], while latitude should be in [-80 80].
+% the longitude can be in [0, 360] or [-180,180], while latitude is in [-80 80].
 %
 % timeTick --- the specified time with datetime format. e.g. timeTick = datetime(2010,1,1);
 %
-% varList --- variable list. Default: varList = {'ssh','temp','salt','u','v'};
+% varList --- variable list. Default: varList = {'ssh','temp','salt','uvel','vvel'};
 %
 %% Output Arguments
 % D --- a datastruct containing all the variables you need. Note that the
@@ -95,7 +95,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 %
 %% Author Info
 % Created by Wenfan Wu, Virginia Institute of Marine Science in 2021.
-% Last Updated on 25 Sep 2024.
+% Last Updated on 15 Fep 2025.
 % Email: wwu@vims.edu
 %
 % See also: ncread
@@ -107,11 +107,11 @@ if exist(aimpath,'dir')~=7
     mkdir(aimpath);
 end
 
-varBase = {'ssh','temp','salt','u','v'};
+varBase = {'ssh','temp','salt','uvel','vvel'};
 stdBase = {'surf_el', 'water_temp','salinity','water_u','water_v'};
 
 if nargin<4
-    varList = {'ssh','temp','salt','u','v'};                                              % variable name list
+    varList = {'ssh','temp','salt','uvel','vvel'};                                     % variable name list
     stdList = {'surf_el', 'water_temp','salinity','water_u','water_v'};  % standard name list
 end
 
@@ -119,7 +119,7 @@ varList = lower(varList);
 ind_vars = cellfun(@(x) find(contains(varBase, x)), varList);
 if numel(ind_vars)~=numel(varList)
     warning on
-    warning('Some variable names are unrecognized!')
+    warning('some variable names are unrecognized!')
 end
 varList = varBase(ind_vars);
 stdList = stdBase(ind_vars);
@@ -141,12 +141,17 @@ geo_tag = strrep(geo_tag, '-', 'n'); % to avoid unnecessary issues on Linux syst
 aimfile = fullfile(aimpath, [geo_tag, '_',datestr(time_hycom,'yyyymmddTHHMMZ'),'.mat']);
 
 %% Download
+nVars = numel(stdList);
 if exist(aimfile, 'file')~=0
     disp('It has been downloaded before')
     D = load(aimfile);
 else
     if nargin < 5
-        URL = get_URL(time_hycom);
+        URL = get_URL(time_hycom); URLs = repmat({URL}, 1,nVars);
+        if timeTick >= datetime(2024,9,4)
+            svars = {'ssh','t3z','s3z','u3z','v3z'};
+            URLs = cellfun(@(x,y) strrep(x, 't3z', y), URLs, svars(ind_vars), 'UniformOutput', false);
+        end
     end
     % ncdisp(URL)  % debug
     nc_dims = {'lon','lat','depth','time'};
@@ -154,7 +159,7 @@ else
     latAll = ncread(URL, nc_dims{2});
     depAll = ncread(URL, nc_dims{3});
     timeAll = datetime(datevec(ncread(URL, nc_dims{4})/24+datenum(2000,1,1))); %#ok<*DATNM>
-    
+
     % check the consistency of coordinate systems
     lonReg = region(1:2); lon_flag = 0;
     if max(lonAll)>180 && min(lonReg)<0
@@ -166,15 +171,15 @@ else
         lonReg(lonReg>180) = lonReg(lonReg>180)-360;
     end
     if sum(lonReg==region(1:2))==1
-        error('your provided longitutes hits the longitudinal bound of hycom product, please check!')
+        error('your provided longitutes hit the longitudinal bound of hycom product, please check!')
     end
     region(1:2) = lonReg;
-    
+
     % check the availability of time span when URL was manually specified
     if time_hycom<min(timeAll)-days(1) || time_hycom>max(timeAll)+days(1)
         error('the given time is outside the time range of the specified HYCOM product!')
     end
-    
+
     % begin to subset data
     indLons = wisefind(lonAll, region(1:2));
     indLats = wisefind(latAll, region(3:4));
@@ -202,13 +207,19 @@ else
     end
     D.dev_time = dev_time;
 
-    nVars = numel(stdList);
     nLayers = numel(D.depth);
     for iVar = 1:nVars
         stdName = stdList{iVar};
         varName = varList{iVar};
+        URL = URLs{iVar};
         if strcmp(varName, 'ssh')
-            varData = squeeze(ncread(URL, stdName, [min(indLons),min(indLats),indTime], [abs(diff(indLons))+1,abs(diff(indLats))+1,1])); %#ok<*NASGU>
+            if timeTick >= datetime(2024,9,4) % ssh is hourly rather than 3-hourly
+                timeAll = datetime(datevec(ncread(URL, 'time')/24+datenum(2000,1,1))); %#ok<*DATNM>
+                indTime2 = wisefind(timeAll, time_hycom);
+            else
+                indTime2 = indTime;
+            end
+            varData = squeeze(ncread(URL, stdName, [min(indLons),min(indLats),indTime2], [abs(diff(indLons))+1,abs(diff(indLats))+1,1])); %#ok<*NASGU>
         else
             varData = squeeze(ncread(URL, stdName, [min(indLons),min(indLats),1,indTime], [abs(diff(indLons))+1,abs(diff(indLats))+1,nLayers,1]));
         end
@@ -229,9 +240,13 @@ function URL = get_URL(timeTick)
 if timeTick < datetime(1992,10,2)
     error('No available HYCOM data set before 1992-10-02!')
 
-    % ------GLBv0.08 (2014-7-1 to 2020-2-19, 3-hourly, 40 levels, 0.08*0.08) --- High-priority
+    % ------ESPC-D-V02 (2024-9-4 to present, 3-hourly or 1-hourly (ssh), 40 levels, 0.08*0.04)
+elseif timeTick >= datetime(2024,9,4)
+    URL = 'http://tds.hycom.org/thredds/dodsC/ESPC-D-V02/t3z?'; % checked  0-360, -80-90
+
+    % ------GLBv0.08 (2014-7-1 to 2020-2-19, 3-hourly, 40 levels, 0.08*0.08)
 elseif timeTick >= datetime(2018,1,1,12,0,0) && timeTick <= datetime(2020,2,19,9,0,0)  % checked  0-360, -80-80
-    URL = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_93.0?';  
+    URL = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_93.0?';
 elseif timeTick >= datetime(2017,10,1,12,0,0) && timeTick <= datetime(2018,3,20,9,0,0)  % checked  0-360, -80-80
     URL = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_92.9?';
 elseif timeTick >= datetime(2017,6,1,12,0,0) && timeTick <= datetime(2017,10,1,9,0,0)    % checked   -180-180, -80-80
@@ -243,7 +258,7 @@ elseif timeTick >= datetime(2016,5,1,12,0,0) && timeTick <= datetime(2017,2,1,9,
 elseif timeTick >= datetime(2014,7,1,12,0,0) && timeTick <= datetime(2016,9,30,9,0,0)     % checked   -180-180, -80-80
     URL = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_56.3?';
 
-    % ------GLBy0.08 (2018-12-4 to ongoing, 3-hourly, 40 levels, 0.08*0.04)
+    % ------GLBy0.08 (2018-12-4 to 2024-9-4, 3-hourly, 40 levels, 0.08*0.04)
 elseif timeTick >= datetime(2018,12,4,12,0,0)                                                    % checked  0-360, -80-80
     URL = 'http://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0?';
 
@@ -289,6 +304,15 @@ end
 % GLBu0.08
 % expt_91.2; expt_91.1;expt_91.0; expt_90.9;
 % expt_19.1; expt_19.0  (GOFS 3.0-Reanalysis)
+%
+% 1) ESPC-D-V02 (latest modeling system)
+%       Global Analysis
+% 2) GOFS 3.1
+%       Global Analysis
+%       Global Reanalysis
+% 3) GOFS 3.0
+%       Global Analysis
+%       Global Reanalysis
 %
 %% Debug
 % timeList = [datetime(1993,1,1) datetime(1996,1,1) datetime(2012, 3,1) datetime(2014, 1,1) ...
