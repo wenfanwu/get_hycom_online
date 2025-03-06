@@ -72,7 +72,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 % (2) before downloading, this function will check if you have ever made
 % the same request, if so, it will load the available one directly.
 %
-% (3) this function integrates 13 types of HYCOM products, all of which
+% (3) this function integrates 14 types of HYCOM products, all of which
 % have latitude vectors from -80 to 80. However, there are 8 products
 % whose longitude vectors are from 0 to 360, whereas those of the other 5
 % products are from -180 to 180 (see the bottom of this function). This
@@ -95,7 +95,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, URL)
 %
 %% Author Info
 % Created by Wenfan Wu, Virginia Institute of Marine Science in 2021.
-% Last Updated on 15 Fep 2025.
+% Last Updated on 5 Mar 2025.
 % Email: wwu@vims.edu
 %
 % See also: ncread
@@ -147,10 +147,12 @@ if exist(aimfile, 'file')~=0
     D = load(aimfile);
 else
     if nargin < 5
-        URL = get_URL(time_hycom); URLs = repmat({URL}, 1,nVars);
+        URL = get_URL(time_hycom); 
+        URLs = repmat({URL}, 1,nVars);
         if timeTick >= datetime(2024,9,4)
             svars = {'ssh','t3z','s3z','u3z','v3z'};
-            URLs = cellfun(@(x,y) strrep(x, 't3z', y), URLs, svars(ind_vars), 'UniformOutput', false);
+            URL = [URL,'/',num2str(year(timeTick))];
+            URLs = cellfun(@(x,y) strrep(x, 't3z', y), repmat({URL}, 1,nVars), svars(ind_vars), 'UniformOutput', false);
         end
     end
     % ncdisp(URL)  % debug
@@ -171,7 +173,7 @@ else
         lonReg(lonReg>180) = lonReg(lonReg>180)-360;
     end
     if sum(lonReg==region(1:2))==1
-        error('your provided longitutes hit the longitudinal bound of hycom product, please check!')
+        error('your provided longitutes hit longitudinal bounds of hycom product, please check!')
     end
     region(1:2) = lonReg;
 
@@ -242,7 +244,7 @@ if timeTick < datetime(1992,10,2)
 
     % ------ESPC-D-V02 (2024-9-4 to present, 3-hourly or 1-hourly (ssh), 40 levels, 0.08*0.04)
 elseif timeTick >= datetime(2024,9,4)
-    URL = 'http://tds.hycom.org/thredds/dodsC/ESPC-D-V02/t3z?'; % checked  0-360, -80-90
+    URL = 'http://tds.hycom.org/thredds/dodsC/ESPC-D-V02/t3z'; % checked  0-360, -80-90
 
     % ------GLBv0.08 (2014-7-1 to 2020-2-19, 3-hourly, 40 levels, 0.08*0.08)
 elseif timeTick >= datetime(2018,1,1,12,0,0) && timeTick <= datetime(2020,2,19,9,0,0)  % checked  0-360, -80-80
@@ -276,7 +278,9 @@ elseif timeTick >= datetime(2012,1,25) && timeTick <= datetime(2013,8,20)    % c
 elseif timeTick >= datetime(1992,10,2) && timeTick <= datetime(1995,7,31)     % checked   -180-180, -80-80
     URL = 'http://tds.hycom.org/thredds/dodsC/GLBu0.08/expt_19.0?';
 end
-expName = URL(end-18:end-1);
+
+idx = strfind(URL, '/');
+expName = URL(idx(end-1)+1:end);
 disp(['HYCOM_',expName, ' is being downloaded, please wait...'])
 end
 
