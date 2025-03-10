@@ -63,15 +63,15 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, varargin)
 %       the specified time moment with datetime format. e.g., timeTick = datetime(2010,1,1); 
 % varList - variable list; cell/string;
 %       the requested variable list, default: varList = {'ssh','temp','salt','uvel','vvel'}; 
- % varargin - options; char
- %      three options available in this function (case-insensitive):
+% varargin - options; char
+%       three options available in this function (case-insensitive):
 %       1) 'URL' - the URL of specified hycom product. see the bottom of this
 %           function to find the URLs for different products. 
 %       2) 'format' - the format of downloaded file (netcdf or mat). the
 %           default format is 'mat', you can set 'format' as 'netcdf' or 'nc'
 %           to save the file as NetCDF.
-%       3) 'prefix' - the prefix name of the downloaded file; the prefix
-%           file name is automatically created by the required region.
+%       3) 'prefix' - the prefix name of downloaded files; the prefix file
+%           name is automatically created by the required region by default.
 %
 %% Output Arguments
 % D - the returned data; datastruct;

@@ -55,7 +55,7 @@ region = [261 280 17.5 32.5]; % the Gulf of Mexico
 timeTick = datetime(2010,1,1);
 varList = {'ssh','temp','salt','uvel','vvel'};    
 URL = 'http://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0?';
-D = get_hycom_online(aimpath, region, timeTick, varList, URL);
+D = get_hycom_online(aimpath, region, timeTick, varList, 'URL', URL);
 ```
 
 ## Sample Graph
