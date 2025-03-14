@@ -18,6 +18,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, varargin)
 % clc;clearvars
 % aimpath = 'E:/data/';
 % region = [190 240 -5 5]; % Nino3.4
+% % region = [160 210 -5 5]; % Niño 4 
 % timeTick = datetime(2010,1,1);
 % varList = {'ssh','temp','salt','uvel','vvel'};
 % D = get_hycom_online(aimpath, region, timeTick, varList);
@@ -92,19 +93,15 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, varargin)
 % (3) this function integrates 14 types of hycom products, all of which
 % have latitude vectors from -80 to 80. However, there are 9 products
 % whose longitude vectors are from 0 to 360, whereas those of the other 5
-% products are from -180 to 180 (see the bottom of this function). This
-% inconsistency slightly hinders our data reading, especially when your
-% given spatial region intersects the prime meridian. In this case, you
-% need to slice your domain and download twice.
+% products are from -180 to 180 (see the bottom of this function). If the
+% provided region crosses the longitudinal boundaries of selected hycom
+% product, this function will automatically splice the west and east parts
+% together to get your desired data. 
 %
 %% Tips
 % The network of HYCOM website seems to be unstable, so it may take
 % a long time to download data sometimes, or encountered netCDF errors,
 % just re-run the function in this case.
-%
-% A possible method to accelerate this function is to save the dimension
-% info (lon, lat, time, depth) of different HYCOM products as MAT files in
-% advance, but it may reduce the conciseness of this function.
 %
 % What if the HYCOM data of the particular time is missing? You can increase
 % the 'tole_time' parameter at Line 196 to replace missing data with data on
@@ -112,7 +109,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, varargin)
 %
 %% Author Info
 % Created by Wenfan Wu, Virginia Institute of Marine Science in 2021.
-% Last Updated on 9 Mar 2025.
+% Last Updated on 14 Mar 2025.
 % Email: wwu@vims.edu
 %
 % See also: ncread
@@ -193,7 +190,7 @@ else
     end
     % ncdisp(URL)  % debug
     nc_dims = {'lon','lat','depth','time'};
-    lonAll = ncread(URL, nc_dims{1});
+    lonAll = ncread(URL, nc_dims{1}); 
     latAll = ncread(URL, nc_dims{2});
     depAll = ncread(URL, nc_dims{3});
     timeAll = datetime(datevec(ncread(URL, nc_dims{4})/24+datenum(2000,1,1))); %#ok<*DATNM>
@@ -208,9 +205,7 @@ else
         lon_flag = 1;
         lonReg(lonReg>180) = lonReg(lonReg>180)-360;
     end
-    if sum(lonReg==region(1:2))==1
-        error('your provided longitutes hit longitudinal bounds of hycom product, please check!')
-    end
+    hit_flag = sum(lonReg==region(1:2));
     region(1:2) = lonReg;
 
     % check the availability of time span when URL was manually specified
@@ -222,8 +217,11 @@ else
     indLons = wisefind(lonAll, region(1:2));
     indLats = wisefind(latAll, region(3:4));
     indTime = wisefind(timeAll, time_hycom);
-
-    D.lon = lonAll(min(indLons):max(indLons));
+    if hit_flag == 2
+        D.lon = lonAll(min(indLons):max(indLons));
+    elseif hit_flag==1
+        D.lon = [lonAll(max(indLons):end); lonAll(1:min(indLons))];
+    end
     D.lat = latAll(min(indLats):max(indLats));
     D.depth = depAll;
     D.time = timeAll(indTime);
@@ -244,8 +242,8 @@ else
         return
     end
     D.dev_time = dev_time;
-
-    nLayers = numel(D.depth);
+    
+    nLons = numel(lonAll); nLayers = numel(D.depth);
     for iVar = 1:nVars
         stdName = stdList{iVar};
         varName = varList{iVar};
@@ -257,9 +255,21 @@ else
             else
                 indTime2 = indTime;
             end
-            varData = squeeze(ncread(URL, stdName, [min(indLons),min(indLats),indTime2], [abs(diff(indLons))+1,abs(diff(indLats))+1,1])); %#ok<*NASGU>
+            if hit_flag==2
+                varData = squeeze(ncread(URL, stdName, [min(indLons),min(indLats),indTime2], [abs(diff(indLons))+1,abs(diff(indLats))+1,1])); %#ok<*NASGU>
+            elseif hit_flag==1
+                varData1 = squeeze(ncread(URL, stdName, [max(indLons), min(indLats),indTime2], [nLons-max(indLons)+1,abs(diff(indLats))+1,1]));
+                varData2 = squeeze(ncread(URL, stdName, [1, min(indLats),indTime2], [min(indLons),abs(diff(indLats))+1,1]));
+                varData = cat(1, varData1, varData2);
+            end
         else
-            varData = squeeze(ncread(URL, stdName, [min(indLons),min(indLats),1,indTime], [abs(diff(indLons))+1,abs(diff(indLats))+1,nLayers,1]));
+            if hit_flag==2
+                varData = squeeze(ncread(URL, stdName, [min(indLons),min(indLats),1,indTime], [abs(diff(indLons))+1,abs(diff(indLats))+1,nLayers,1]));
+            elseif hit_flag==1
+                varData1 = squeeze(ncread(URL, stdName, [max(indLons), min(indLats),1, indTime], [nLons-max(indLons)+1,abs(diff(indLats))+1, nLayers, 1]));
+                varData2 = squeeze(ncread(URL, stdName, [1, min(indLats),1, indTime], [min(indLons),abs(diff(indLats))+1,nLayers, 1]));
+                varData = cat(1, varData1, varData2);
+            end
         end
         D.(varName) = varData;
         clear varData
