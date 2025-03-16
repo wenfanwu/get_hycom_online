@@ -205,8 +205,8 @@ else
         lon_flag = 1;
         lonReg(lonReg>180) = lonReg(lonReg>180)-360;
     end
-    hit_flag = sum(lonReg==region(1:2));
     region(1:2) = lonReg;
+    hit_flag = 0;
 
     % check the availability of time span when URL was manually specified
     if time_hycom<min(timeAll)-days(1) || time_hycom>max(timeAll)+days(1)
@@ -214,10 +214,12 @@ else
     end
 
     % begin to subset data
-    indLons = wisefind(lonAll, region(1:2));
+    indLons = wisefind(lonAll, region(1:2));  
+    if indLons(1)>indLons(2); hit_flag=1; end  % lonAll must be in ascending order.
+    
     indLats = wisefind(latAll, region(3:4));
     indTime = wisefind(timeAll, time_hycom);
-    if hit_flag == 2
+    if hit_flag == 0
         D.lon = lonAll(min(indLons):max(indLons));
     elseif hit_flag==1
         D.lon = [lonAll(max(indLons):end); lonAll(1:min(indLons))];
@@ -255,7 +257,7 @@ else
             else
                 indTime2 = indTime;
             end
-            if hit_flag==2
+            if hit_flag==0
                 varData = squeeze(ncread(URL, stdName, [min(indLons),min(indLats),indTime2], [abs(diff(indLons))+1,abs(diff(indLats))+1,1])); %#ok<*NASGU>
             elseif hit_flag==1
                 varData1 = squeeze(ncread(URL, stdName, [max(indLons), min(indLats),indTime2], [nLons-max(indLons)+1,abs(diff(indLats))+1,1]));
@@ -263,7 +265,7 @@ else
                 varData = cat(1, varData1, varData2);
             end
         else
-            if hit_flag==2
+            if hit_flag==0
                 varData = squeeze(ncread(URL, stdName, [min(indLons),min(indLats),1,indTime], [abs(diff(indLons))+1,abs(diff(indLats))+1,nLayers,1]));
             elseif hit_flag==1
                 varData1 = squeeze(ncread(URL, stdName, [max(indLons), min(indLats),1, indTime], [nLons-max(indLons)+1,abs(diff(indLats))+1, nLayers, 1]));
