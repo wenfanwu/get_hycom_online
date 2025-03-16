@@ -7,7 +7,7 @@ A MATLAB function to download hycom data easily (1992-10-02 to present)
 1. get_hycom_online works for the latest hycom product after 2024-09-04 (ESPC-D-V02).
 2. the downloaded file can be saved in NetCDF format.
 3. the prefix name of downloaded files can be customized.
-4. this function will splice the two parts together when the provided region crosses longitudinal boundaries of the selected hycom product.
+4. the provided region can cross the longitudinal boundaries of hycom products.
 
 ## Example-1: Download HYCOM data of a particular moment
 
@@ -62,6 +62,6 @@ D = get_hycom_online(aimpath, region, timeTick, varList, 'URL', URL);
 
 ## Sample Graph
 
-Niño 4 region is a good example because it crosses the longitudinal boundaries of some hycom products. In this case, the function will splice the west and east parts together to get the desired data.
+Niño 4 region is a good example because it crosses the longitudinal boundaries ([-180,180]) of some hycom products. In this case, the function will splice the west and east parts together to get the desired data.
 
 ![sample](./figures/nino4.png)
