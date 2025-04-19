@@ -278,7 +278,7 @@ else
     end
     switch fmt
         case 'mat'
-            save(aimfile, '-struct', 'D')
+            save(aimfile, '-struct', 'D', '-v7.3')  % v7.3 supports partial loading
         case 'nc'
             save_nc(aimfile, D)
     end
@@ -344,19 +344,19 @@ nx = numel(D.lon);
 ny = numel(D.lat);
 nz = numel(D.depth);
 
-nccreate(filepath, 'lon', 'Dimensions', {'lon', nx},'Datatype', 'double', 'Format', 'netcdf4')
+nccreate(filepath, 'lon', 'Dimensions', {'lon', nx},'Datatype', 'single', 'Format', 'netcdf4')
 ncwrite(filepath, 'lon', D.lon);
 
-nccreate(filepath, 'lat', 'Dimensions', {'lat', ny},'Datatype', 'double', 'Format', 'netcdf4')
+nccreate(filepath, 'lat', 'Dimensions', {'lat', ny},'Datatype', 'single', 'Format', 'netcdf4')
 ncwrite(filepath, 'lat', D.lat);
 
-nccreate(filepath, 'depth', 'Dimensions', {'depth', nz},'Datatype', 'double', 'Format', 'netcdf4')
+nccreate(filepath, 'depth', 'Dimensions', {'depth', nz},'Datatype', 'single', 'Format', 'netcdf4')
 ncwrite(filepath, 'depth', D.depth);
 
-nccreate(filepath, 'time', 'Dimensions', {'one', 1},'Datatype', 'double', 'Format', 'netcdf4')
+nccreate(filepath, 'time', 'Dimensions', {'one', 1},'Datatype', 'single', 'Format', 'netcdf4')
 ncwrite(filepath, 'time', datenum(D.time));
 
-nccreate(filepath, 'dev_time', 'Dimensions', {'one', 1},'Datatype', 'double', 'Format', 'netcdf4')
+nccreate(filepath, 'dev_time', 'Dimensions', {'one', 1},'Datatype', 'single', 'Format', 'netcdf4')
 ncwrite(filepath, 'dev_time', D.dev_time/hours(1));
 
 varList = {'ssh','temp','salt','uvel','vvel'};
@@ -365,9 +365,9 @@ for iVar = 1:5
     if isfield(D, varName)
         switch varName
             case 'ssh'
-                nccreate(filepath, varName, 'Dimensions', {'lon', nx, 'lat', ny},'Datatype', 'double', 'Format', 'netcdf4')
+                nccreate(filepath, varName, 'Dimensions', {'lon', nx, 'lat', ny},'Datatype', 'single', 'Format', 'netcdf4')
             otherwise
-                nccreate(filepath, varName, 'Dimensions', {'lon', nx, 'lat', ny, 'depth', nz},'Datatype', 'double', 'Format', 'netcdf4')
+                nccreate(filepath, varName, 'Dimensions', {'lon', nx, 'lat', ny, 'depth', nz},'Datatype', 'single', 'Format', 'netcdf4')
         end
         ncwrite(filepath, varName, D.(varName));
     end
