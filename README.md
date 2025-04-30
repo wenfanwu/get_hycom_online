@@ -60,8 +60,16 @@ URL = 'http://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0?';
 D = get_hycom_online(aimpath, region, timeTick, varList, 'URL', URL);
 ```
 
-## Sample Graph
+<br>
+
+## Notes
 
 Niño 4 region is a good example because it crosses the longitudinal boundaries ([-180,180]) of some hycom products. In this case, the function will splice the west and east parts together to get the desired data.
 
 ![sample](./figures/nino4.png)
+
+<br>
+
+Tidal signals are included in the latest HYCOM product (ESPC-D-V02), as illustrated in the figure below, whereas they were absent in earlier versions.
+
+![sample](./figures/ssh.png)
