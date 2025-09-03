@@ -109,7 +109,7 @@ function D = get_hycom_online(aimpath, region, timeTick, varList, varargin)
 %
 %% Author Info
 % Created by Wenfan Wu, Virginia Institute of Marine Science in 2021.
-% Last Updated on 14 Mar 2025.
+% Last Updated on 3 Sep 2025.
 % Email: wwu@vims.edu
 %
 % See also: ncread
@@ -353,8 +353,9 @@ ncwrite(filepath, 'lat', D.lat);
 nccreate(filepath, 'depth', 'Dimensions', {'depth', nz},'Datatype', 'single', 'Format', 'netcdf4')
 ncwrite(filepath, 'depth', D.depth);
 
-nccreate(filepath, 'time', 'Dimensions', {'one', 1},'Datatype', 'single', 'Format', 'netcdf4')
-ncwrite(filepath, 'time', datenum(D.time));
+nccreate(filepath, 'time', 'Dimensions', {'one', 1},'Datatype', 'double', 'Format', 'netcdf4')
+ncwrite(filepath, 'time', datenum(D.time)-datenum(1970,1,1));
+ncwriteatt(filepath, 'time', 'units', 'days since 1970-01-01 00:00:00');
 
 nccreate(filepath, 'dev_time', 'Dimensions', {'one', 1},'Datatype', 'single', 'Format', 'netcdf4')
 ncwrite(filepath, 'dev_time', D.dev_time/hours(1));
@@ -384,7 +385,7 @@ for iVar = 1:numel(varList)
     varName = varList{iVar};
     D.(varName) = ncread(aimfile, varName);
 end
-D.time = datetime(datevec(D.time));
+D.time = datetime(datevec(double(D.time)+datenum(1970,1,1))); %#ok<*TDTVEC>
 D.dev_time = hours(D.dev_time);
 
 end
