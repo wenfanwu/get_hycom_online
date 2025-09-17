@@ -2,12 +2,13 @@
 
 A MATLAB function to download hycom data easily (1992-10-02 to present)
 
-### New features (9 Mar, 2025)
+### Main features
 
-1. get_hycom_online works for the latest hycom product after 2024-09-04 (ESPC-D-V02).
-2. the downloaded file can be saved in NetCDF format.
-3. the prefix name of downloaded files can be customized.
-4. the provided region can cross the longitudinal boundaries of hycom products.
+- Integrated 14 HYCOM products (including the latest ESPC-D-V02).
+- Supports longitude ranges in both [-180, 180] and [0, 360].
+- Automatically merges data when the requested region crosses meridional boundaries.
+- Downloads available in MAT or NetCDF format with customized prefix names.
+- Automatically skips previously downloaded data.
 
 ## Example-1: Download HYCOM data of a particular moment
 
